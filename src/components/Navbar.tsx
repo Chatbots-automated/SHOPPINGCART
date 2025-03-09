@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, LogIn, LogOut, ExternalLink, UserCircle2, ShoppingBag } from 'lucide-react';
+import { Menu, X, LogIn, LogOut, ExternalLink, UserCircle2, ShoppingBag, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import Cart from './Cart';
@@ -12,7 +12,7 @@ export default function Navbar() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { cart } = useStore();
+  const { cart, wishlist } = useStore();
   
   // Check if we're on the home page
   const isHomePage = location.pathname === '/';
@@ -105,6 +105,28 @@ export default function Navbar() {
                 <ExternalLink className="h-3 w-3" />
               </a>
 
+              {/* Wishlist Button */}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Link
+                  to="/wishlist"
+                  className={`relative p-2 rounded-full transition-all duration-300 ${
+                    (isScrolled || !isHomePage) 
+                      ? 'text-gray-600 hover:text-elida-gold' 
+                      : 'text-gray-200 hover:text-white'
+                  }`}
+                >
+                  <Heart className="h-6 w-6" />
+                  {wishlist.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-elida-gold text-white w-5 h-5 rounded-full text-xs flex items-center justify-center">
+                      {wishlist.length}
+                    </span>
+                  )}
+                </Link>
+              </motion.div>
+
               {/* Shopping Cart Button */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -177,6 +199,23 @@ export default function Navbar() {
 
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center gap-4">
+              {/* Mobile Wishlist Button */}
+              <Link
+                to="/wishlist"
+                className={`relative p-2 rounded-full transition-all duration-300 ${
+                  (isScrolled || !isHomePage) 
+                    ? 'text-gray-600 hover:text-elida-gold' 
+                    : 'text-gray-200 hover:text-white'
+                }`}
+              >
+                <Heart className="h-6 w-6" />
+                {wishlist.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-elida-gold text-white w-5 h-5 rounded-full text-xs flex items-center justify-center">
+                    {wishlist.length}
+                  </span>
+                )}
+              </Link>
+
               {/* Mobile Shopping Cart Button */}
               <motion.button
                 whileHover={{ scale: 1.05 }}

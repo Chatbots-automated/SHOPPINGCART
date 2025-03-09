@@ -72,6 +72,8 @@ const isBeforeMinimumBuffer = (timeSlot: string, date: string): boolean => {
 // Function to get the earliest available time after buffer
 export const getEarliestAvailableTime = (): string => {
   const now = new Date();
+  const dayOfWeek = now.getDay();
+  const businessHours = BUSINESS_HOURS[dayOfWeek as keyof typeof BUSINESS_HOURS];
   
   // Add 30 minutes buffer
   const bufferTime = new Date(now);
@@ -82,8 +84,29 @@ export const getEarliestAvailableTime = (): string => {
   if (remainder > 0) {
     bufferTime.setMinutes(bufferTime.getMinutes() + (15 - remainder));
   }
-  
-  // Format as HH:MM
+
+  // Check if the buffer time is beyond business hours
+  const bufferHours = bufferTime.getHours();
+  const bufferMinutes = bufferTime.getMinutes();
+  const totalBufferMinutes = bufferHours * 60 + bufferMinutes;
+  const businessEndMinutes = businessHours.end * 60;
+
+  // If buffer time is beyond today's business hours, return tomorrow's opening time
+  if (totalBufferMinutes >= businessEndMinutes) {
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowDay = tomorrow.getDay();
+    const tomorrowHours = BUSINESS_HOURS[tomorrowDay as keyof typeof BUSINESS_HOURS];
+    return `${tomorrowHours.start.toString().padStart(2, '0')}:00`;
+  }
+
+  // If buffer time is before business hours, return today's opening time
+  const businessStartMinutes = businessHours.start * 60;
+  if (totalBufferMinutes < businessStartMinutes) {
+    return `${businessHours.start.toString().padStart(2, '0')}:00`;
+  }
+
+  // Return the buffer time if it's within business hours
   return bufferTime.toLocaleTimeString('en-US', { 
     hour: '2-digit', 
     minute: '2-digit',
@@ -149,9 +172,18 @@ export const fetchAvailableTimeSlots = async (cabinId: string, date: string): Pr
         // Check if this time slot is before the minimum buffer time
         const isTooSoon = isBeforeMinimumBuffer(time, date);
 
+        // Check if the time slot is within business hours
+        const slotDate = new Date(date);
+        const [slotHours, slotMinutes] = time.split(':').map(Number);
+        slotDate.setHours(slotHours, slotMinutes);
+        
+        const isWithinBusinessHours = 
+          slotHours >= start && 
+          (slotHours < end || (slotHours === end && slotMinutes === 0));
+
         timeSlots.push({
           time,
-          available: !isBooked && !isTooSoon
+          available: !isBooked && !isTooSoon && isWithinBusinessHours
         });
       }
     }
